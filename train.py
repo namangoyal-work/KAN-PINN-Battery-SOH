@@ -5,10 +5,14 @@ from src.kan_pinn import pinn
 from src.physics import physics
 from src.augmented_lagrangian import algl
 
-def train(dataloader: Dataloader, epochs: int = 200, lr_model: float = 1e-3, lr_al: float=1e-3):
-    model=pinn()
+def train_al_pkan(dataloader: DataLoader, epochs: int = 200, lr_model: float = 1e-3, lr_al: float=1e-3):
+    model=pinn(input_dim=2050, hidden_dim=64, grid_size=2, spline_order=3)
     phy = physics()
-    num_samples=len(dataloader.dataset)
+   # num_samples=len(dataloader.dataset)
+    if hasattr(dataloader.dataset, 'dataset'):
+        num_samples = len(dataloader.dataset.dataset)
+    else:
+        num_samples = len(dataloader.dataset)
     al_loss_fn=algl(num_samples=num_samples)
     model_params=list(model.parameters()) + list(phy.parameters())
     optimizer_model = optim.AdamW(model_params, lr=lr_model)
@@ -20,10 +24,11 @@ def train(dataloader: Dataloader, epochs: int = 200, lr_model: float = 1e-3, lr_
         for batch_idx, batch in enumerate(dataloader):
             x_features,t,u_true,indices=batch
             t.requires_grad_(True)
+            x_tracked = torch.cat([x_features[:,:-1],t],dim=1)
             optimizer_model.zero_grad()
             optimizer_al.zero_grad()
             u_hat = model(x_features)
-            resphy = phy(t,u_hat)
+            resphy = phy(t,u_hat,x_tracked,model)
             batch_lambdas=al_loss_fn.lambdas[indices]
             loss_data=torch.mean((u_hat - u_true) ** 2)
             loss_lambda = torch.mean(batch_lambdas * resphy)

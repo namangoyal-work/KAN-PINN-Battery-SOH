@@ -4,7 +4,7 @@ from src.kan_pinn import pinn
 from src.metrics import calculate_metrics
 
 def evaluate_model(test_dataloader, model_path="kan_pinn_model.pth"):
-    model=pinn()
+    model=pinn(input_dim=2050, hidden_dim=64, grid_size=2, spline_order=3)
     model.load_state_dict(torch.load(model_path))
     model.eval()
     predictions=[]

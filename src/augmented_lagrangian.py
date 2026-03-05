@@ -1,7 +1,7 @@
 import torch 
 import torch.nn as nn
 
-class algloss(nn.Module):
+class algl(nn.Module):
     def __init__(self, num_samples):
         super().__init__()
         self.lambdas = nn.Parameter(torch.zeros(num_samples,1),requires_grad=True)
